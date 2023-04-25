@@ -44,11 +44,19 @@ function Arnoldi(A,b,k)
 
 end
 
-function dqgmres(A,b)
+function dqgmres(A,b,k)
       m,n = size(A)
       if n != m
         throw(DimensionMismatch("A has to be a square matrix!"))
       end
+      #setting up workspace
+      P = zeros(Float64,m,k)
+      V = zeros(Float64,m,k)
+      H = zeros(Float64,k+1)
+      c = zeros(Float64,k)
+      s = zeros(Float64,k)
+
+      
       x0 = zeros(Float64,n)
       r0 = b -A*x0
       γ_0
