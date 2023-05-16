@@ -83,3 +83,51 @@ function polar_poisson(n, m, f, g; R=1.0)
     M⁻¹ = FC(1/n) * eye(n)
     return A, b, M⁻¹
   end
+
+ # Based on Lars Ruthotto's initial implementation.
+ function ddx(n :: Int)
+  e = ones(n)
+  return sparse([1:n; 1:n], [1:n; 2:n+1], [-e; e])
+end
+
+function get_div_grad(n1 :: Int, n2 :: Int, n3 :: Int)
+
+  # Divergence
+  D1 = kron(eye(n3), kron(eye(n2), ddx(n1)))
+  D2 = kron(eye(n3), kron(ddx(n2), eye(n1)))
+  D3 = kron(ddx(n3), kron(eye(n2), eye(n1)))
+
+  # DIV from faces to cell-centers
+  Div = [D1 D2 D3]
+
+  return Div * Div'
+end
+
+function sparse_lap(n::Int;T=Float64) 
+  A = get_div_grad(n,n,n)
+  b = ones(T,n^3)
+  return A,b
+
+end
+
+# Square problems with two preconditioners.
+function two_preconditioners(n :: Int=10, m :: Int=20; FC=Float64)
+  A   = ones(FC, n, n) + (n-1) * eye(n)
+  b   = ones(FC, n)
+  M⁻¹ = FC(1/√n) * eye(n)
+  N⁻¹ = FC(1/√m) * eye(n)
+  return A, b, M⁻¹, N⁻¹
+end
+
+#using BandedMatrices
+
+#=  PDE and discretization parameters
+α = 1                           # velocity
+n = 199                   # discretization size
+Δx = 1 / (n+1)                  # grid spacing
+Δt = 0.005                      # time step
+σ = α*Δt/Δx                     # shift
+
+## scaled 2nd order central difference matrix plus identity
+D = BandedMatrix(-2 => ones(n-2)/12, -1 => -2*ones(n-1)/3, 0=> zeros(n), 1 => 2*ones(n-1)/3, 2 => -ones(n-2)/12);
+A = BandedMatrix(Eye(n), (2,2)) + σ * D=#
